@@ -9,7 +9,6 @@ true error rate on that traffic is known exactly.
 
 from __future__ import annotations
 
-import warnings
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -71,13 +70,10 @@ def build_models(out_dir: Path, seed: int) -> tuple[DemoData, list[DemoModel]]:
         ("svc-v5-32px", "SVC exported for the top half of the image (schema mismatch)", SVC(), 32),
     ]
     models = []
-    with warnings.catch_warnings():
-        # skl2onnx reads SVC.probA_/probB_, which scikit-learn 1.9 marks as deprecated.
-        warnings.simplefilter("ignore", FutureWarning)
-        for model_id, description, est, width in specs:
-            est.fit(x_train[:, :width], y_train)
-            path = out_dir / f"{model_id}.onnx"
-            _export(est, x_train[:, :width], path)
-            err = float((est.predict(x_pool[:, :width]) != y_pool).mean()) if width == 64 else None
-            models.append(DemoModel(model_id, description, path, err))
+    for model_id, description, est, width in specs:
+        est.fit(x_train[:, :width], y_train)
+        path = out_dir / f"{model_id}.onnx"
+        _export(est, x_train[:, :width], path)
+        err = float((est.predict(x_pool[:, :width]) != y_pool).mean()) if width == 64 else None
+        models.append(DemoModel(model_id, description, path, err))
     return DemoData(x_pool, y_pool.astype(np.int64), len(y_train)), models

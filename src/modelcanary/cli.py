@@ -150,7 +150,7 @@ def _cmd_demo(args: argparse.Namespace) -> int:
     try:
         from modelcanary.demo.run import run_demo
     except ImportError as exc:  # pragma: no cover - depends on installed extras
-        print(f"the demo needs the 'demo' extra (scikit-learn, skl2onnx, httpx2): {exc}")
+        print(f"the demo needs the 'demo' extra (scikit-learn, skl2onnx, httpx): {exc}")
         return 2
     return run_demo(Path(args.out), seed=args.seed)
 

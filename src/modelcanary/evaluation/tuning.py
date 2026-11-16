@@ -13,6 +13,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 import numpy as np
+from numpy.typing import NDArray
 
 from modelcanary.engine.policy import Direction, MetricSource, RolloutPolicy
 from modelcanary.errors import ConfigError
@@ -21,7 +22,9 @@ from modelcanary.sim.runner import TrafficGenerator
 from modelcanary.sim.scenarios import ArmProfile, Scenario
 
 
-def _draw(gen: TrafficGenerator, source: MetricSource, profile: ArmProfile, n: int) -> np.ndarray:
+def _draw(
+    gen: TrafficGenerator, source: MetricSource, profile: ArmProfile, n: int
+) -> NDArray[np.float64]:
     if source is MetricSource.ERROR:
         return gen.errors(profile, n)
     if source is MetricSource.LATENCY:
@@ -42,7 +45,7 @@ def pilot_planning_sd(
     if bad:
         raise ConfigError(f"pilot seeds must come from the tuning range, got {bad[:3]}")
     scenario = Scenario("pilot-aa", baseline, baseline)
-    diffs: dict[str, list[np.ndarray]] = {m.name: [] for m in policy.metrics}
+    diffs: dict[str, list[NDArray[np.float64]]] = {m.name: [] for m in policy.metrics}
     for seed in seeds:
         gen = TrafficGenerator(scenario, np.random.default_rng(seed))
         for spec in policy.metrics:

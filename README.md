@@ -73,7 +73,17 @@ Details, formulas and complexity: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Quickstart
 
-Requires [uv](https://docs.astral.sh/uv/) and Python 3.12 (uv installs it if missing).
+Requires [uv](https://docs.astral.sh/uv/) and Python 3.11 (uv installs it if missing).
+
+The Python dependency set is constrained to releases available before
+**2024-02-09 01:25:18 UTC**, the timestamp of the previous README commit. Direct
+dependencies are pinned in `pyproject.toml`; `uv.lock` also constrains transitive
+dependencies. The lockfile and the uv-based development/CI workflow are maintained
+with present-day tooling: [uv was first released on February 15, 2024](https://astral.sh/blog/uv).
+Python 3.11 is used because ONNX 1.15 has prebuilt wheels for it; Python 3.12
+would require building that historical ONNX release from source.
+This compatibility snapshot does not establish when the project or demo was created.
+To refresh the lockfile while preserving the cutoff, run `uv lock --upgrade`.
 
 ```bash
 make check      # ruff format --check + ruff lint + mypy --strict + pytest with coverage gate
@@ -104,17 +114,18 @@ uv run modelcanary audit var/audit.jsonl        # verify the hash chain
 
 ## Demo output
 
-`make demo` (real run, pasted verbatim apart from the uv preamble; 5 models trained on half of
-the UCI digits data, the other half replayed as traffic; the conversion outcome is simulated,
+`make demo` with the historical dependency set (setup output and wall-clock timestamp
+omitted; 5 models trained on half of the UCI digits data, the other half replayed as
+traffic; the conversion outcome is simulated,
 see [DATA.md](DATA.md)):
 
 ```
-2026-10-25 17:20:32,595 level=WARNING logger=modelcanary.gateway candidate_inference_failed rollout=demo-4-svc-v5-32px error=model 'svc-v5-32px' failed: [ONNXRuntimeError] : 2 : INVALID_ARGUMENT : Got invalid dimensions for input: X for the following indices (further failures at debug level)
+level=WARNING logger=modelcanary.gateway candidate_inference_failed rollout=demo-4-svc-v5-32px error=model 'svc-v5-32px' failed: [ONNXRuntimeError] : 2 : INVALID_ARGUMENT : Got invalid dimensions for input: X for the following indices (further failures at debug level)
 modelcanary demo: progressive delivery of real scikit-learn -> ONNX models
 ==============================================================================
 data: UCI digits via scikit-learn, 898 training rows, 899 held-out rows replayed as traffic (with replacement)
 models (true error rate on the traffic pool):
-  lr-v1         0.036  logistic regression (current production)
+  lr-v1         0.037  logistic regression (current production)
   svc-v2        0.014  RBF support-vector classifier
   knn-v3        0.016  3-nearest-neighbours: accurate but slow
   tree-v4       0.378  depth-5 decision tree: fast but inaccurate
@@ -127,7 +138,7 @@ models (true error rate on the traffic pool):
   => PROMOTE (all metrics non-inferior) at stage 'canary-50' after 4,825 requests; candidate served 1,089, shadow-scored 1,000
      metric        pairs  baseline   candidate  degradation  interval              verdict
      error_rate      886    0.0361     0.0113      -0.0248  (SPRT llr -4.91)      not_worse
-     latency_ms    2,089    0.0388     0.1898       0.1509  [0.1540, 0.1596]      not_worse
+     latency_ms    2,089    0.0493     0.1974       0.1481  [0.1272, 0.1520]      not_worse
      conversion    1,089    0.2957     0.3260      -0.0303  [-0.1160, 0.0480]     not_worse
 
 [2] rollout knn-v3 vs production svc-v2: as accurate, much slower inference
@@ -135,7 +146,7 @@ models (true error rate on the traffic pool):
   => ROLLBACK (metric worse than baseline: latency_ms) at stage 'shadow' after 200 requests; candidate served 0, shadow-scored 200
      metric        pairs  baseline   candidate  degradation  interval              verdict
      error_rate      200    0.0200     0.0200      -0.0000  (SPRT llr -0.08)      continue
-     latency_ms      200    0.1496     1.0482       0.8986  [0.8615, 0.9357]      worse
+     latency_ms      200    0.2347     1.4142       1.1795  [0.8845, 1.1665]      worse
      conversion        0         -          -            -  [-1.0000, 1.0000]     continue
 
 [3] rollout tree-v4 vs production svc-v2: fast, much less accurate
@@ -143,7 +154,7 @@ models (true error rate on the traffic pool):
   => ROLLBACK (metric worse than baseline: error_rate) at stage 'shadow' after 50 requests; candidate served 0, shadow-scored 50
      metric        pairs  baseline   candidate  degradation  interval              verdict
      error_rate       48    0.0417     0.5208       0.4792  (SPRT llr 4.19)       worse
-     latency_ms       50    0.1391     0.0244      -0.1147  [-0.1681, -0.0612]    continue
+     latency_ms       50    0.2088     0.0297      -0.1791  [-0.2129, -0.1450]    continue
      conversion        0         -          -            -  [-1.0000, 1.0000]     continue
 
 [4] rollout svc-v5-32px vs production svc-v2: cannot score 64-feature requests
@@ -162,14 +173,14 @@ prometheus /metrics excerpt:
   modelcanary_rollout_decisions_total{action="promote"} 1
   modelcanary_rollout_decisions_total{action="rollback"} 3
 
-wrote var/demo/summary.json and audit.jsonl; demo took 13.1 s
+wrote var/demo/summary.json and audit.jsonl; demo took 36.1 s
 ```
 
 Wall-clock latencies vary with machine load; the latency policy margins (rollback once
 confidently > 0.5 ms slower, non-inferior if < 1 ms slower) are set so the verdicts above do
 not depend on it. The interval column is the *running intersection* of the confidence
 sequence; because wall-clock latency drifts with load during the run, the latest point
-estimate can sit just outside it (rollout 1) - an instance of the stationarity assumption
+estimate can sit just outside it - an instance of the stationarity assumption
 listed under Limitations. The single WARNING line is the first inference failure of the
 schema-mismatched model; later failures are logged at debug level.
 
@@ -287,9 +298,9 @@ among others:
 `src` and `tests`, pytest with an 85% branch-coverage gate):
 
 ```
-TOTAL                                     2439     18    464     22    99%
-Required test coverage of 85.0% reached. Total coverage: 98.62%
-148 passed in 58.06s
+TOTAL                                     2438     18    825     23    99%
+Required test coverage of 85.0% reached. Total coverage: 98.74%
+148 passed in 62.85s (0:01:02)
 ```
 
 Unit tests cover each statistical procedure, monitor, policy validation, pairing, the
@@ -298,7 +309,7 @@ simulator and the harness; Hypothesis property tests cover pairing conservation,
 monotonicity, audit-chain round trips and SPRT chunking invariance; integration tests run the gateway with real ONNX models in-process
 (shadow, canary split stickiness, fallback, stale feedback, HTTP error mapping, Prometheus
 output) and the full demo through the CLI. Size: `find src -name '*.py' | xargs wc -l` →
-4455 lines of source, `find tests -name '*.py' | xargs wc -l` → 1987 lines of tests.
+4455 lines of source, `find tests -name '*.py' | xargs wc -l` → 1994 lines of tests.
 
 ## Design decisions
 
