@@ -2,9 +2,11 @@
 
 import itertools
 import math
+from typing import Any
 
 import numpy as np
 import pytest
+from numpy.typing import NDArray
 from scipy import integrate
 
 from modelcanary.errors import ConfigError
@@ -58,7 +60,7 @@ def test_radius_is_vectorised_and_shrinks_like_sqrt_log_t_over_t() -> None:
     assert scaled.max() / scaled.min() < 3
 
 
-def _gaussian_paths(rng: np.random.Generator, reps: int, steps: int) -> np.ndarray:
+def _gaussian_paths(rng: np.random.Generator, reps: int, steps: int) -> NDArray[np.float64]:
     return rng.normal(0.3, 2.0, size=(reps, steps))
 
 
@@ -158,7 +160,12 @@ def test_betting_cs_respects_range_and_shrinks() -> None:
     assert cs.update_many([]) == later
     with pytest.raises(ValueError, match="must lie in"):
         cs.update_many([2.0])
-    for kwargs in ({"lo": 1.0, "hi": 0.0}, {"grid_size": 5}, {"c": 1.0}):
+    invalid_options: tuple[dict[str, Any], ...] = (
+        {"lo": 1.0, "hi": 0.0},
+        {"grid_size": 5},
+        {"c": 1.0},
+    )
+    for kwargs in invalid_options:
         with pytest.raises(ConfigError):
             BettingCS(0.05, **kwargs)
 

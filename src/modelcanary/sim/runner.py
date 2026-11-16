@@ -67,7 +67,8 @@ class TrafficGenerator:
 
     def latencies(self, profile: ArmProfile, n: int) -> FloatArray:
         z = self.rng.standard_normal(n)
-        return profile.latency_median_ms * np.exp(profile.latency_sigma * z)
+        latencies: FloatArray = profile.latency_median_ms * np.exp(profile.latency_sigma * z)
+        return latencies
 
     def conversions(self, profile: ArmProfile, n: int) -> FloatArray:
         return (self.rng.random(n) < profile.conversion_rate).astype(np.float64)

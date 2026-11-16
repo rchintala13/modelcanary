@@ -3,56 +3,63 @@ name = "modelcanary"
 version = "0.1.0"
 description = "Progressive model-delivery router: shadow and canary rollouts gated by SPRT and always-valid confidence sequences."
 readme = "README.md"
-license = "MIT"
+license = { text = "MIT" }
 authors = [{ name = "modelcanary contributors" }]
-requires-python = ">=3.12"
+requires-python = ">=3.11,<3.12"
 dependencies = [
-    "fastapi>=0.162.0",
-    "numpy>=2",
-    "onnxruntime>=1.31.0",
-    "pydantic>=2",
-    "scipy>=1.18.1",
-    "uvicorn>=0.54.0",
+    "fastapi==0.109.2",
+    "numpy==1.26.4",
+    "onnxruntime==1.17.0",
+    "pydantic==2.6.1",
+    "scipy==1.12.0",
+    "uvicorn==0.27.0",
 ]
 
 [project.optional-dependencies]
 demo = [
-    "httpx2>=2.16.0",
-    "scikit-learn>=1.9.1",
-    "skl2onnx>=1.20.0",
+    "httpx==0.26.0",
+    "scikit-learn==1.4.0",
+    "skl2onnx==1.16.0",
 ]
 
 [project.scripts]
 modelcanary = "modelcanary.cli:main"
 
 [build-system]
-requires = ["uv_build>=0.11.28,<0.12.0"]
-build-backend = "uv_build"
+requires = ["hatchling==1.21.1"]
+build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "httpx2>=2.16.0",
-    "hypothesis>=6.170.9",
-    "mypy>=2.4.0",
-    "pytest>=9.1.1",
-    "pytest-cov>=7.1.0",
-    "ruff>=0.17.2",
+    "httpx==0.26.0",
+    "hypothesis==6.98.3",
+    "mypy==1.8.0",
+    "pytest==8.0.0",
+    "pytest-cov==4.1.0",
+    "ruff==0.2.1",
 ]
+
+[tool.uv]
+# Historical package cutoff; uv itself is present-day maintenance tooling.
+exclude-newer = "2024-02-09T01:25:18Z"
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py311"
 src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF", "N", "PL", "PT", "C4", "RET", "ARG"]
 ignore = ["PLR0913", "PLR0917", "PLR2004", "PLR0911", "PLR0912", "PLR0915", "PLC0415"]
 
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false
+
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["PLR2004", "ARG001", "N802", "N806"]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.11"
 strict = true
 files = ["src", "tests"]
 plugins = ["pydantic.mypy"]

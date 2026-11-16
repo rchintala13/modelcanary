@@ -43,7 +43,7 @@ MAX_FEEDBACK = 10_000
 
 
 class _Strict(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", protected_namespaces=("model_validate", "model_dump"))
 
 
 class PredictRequest(_Strict):
